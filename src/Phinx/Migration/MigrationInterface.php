@@ -183,9 +183,20 @@ interface MigrationInterface
      * @deprecated since 0.10.0. Use $this->table($tableName)->insert($data)->save() instead.
      * @param string $tableName Table name
      * @param array $data Data
+     * @param bool
      * @return void
      */
-    public function insert($tableName, $data);
+    public function insert($tableName, $data, $ignoreDuplicates);
+
+       /**
+     * Insert data into a table.
+     *
+     * @deprecated since 0.10.0. Use $this->table($tableName)->insert($data)->save() instead.
+     * @param string $tableName Table name
+     * @param array $data Data
+     * @return void
+     */
+    public function insertOrIgnore($tableName, $data);
 
     /**
      * Create a new database.

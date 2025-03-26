@@ -52,6 +52,7 @@ class Table
      * @var array
      */
     protected $data = [];
+    protected $ignoreDuplicates = false;
 
     /**
      * @param string $name Table Name
@@ -260,6 +261,22 @@ class Table
         return $this->data;
     }
 
+   public function setIgnore($ignoreDuplicates)
+   {
+       $this->ignoreDuplicates = $ignoreDuplicates;
+
+       return $this;
+   }
+
+   public function getIgnore()
+   {
+       return $this->ignoreDuplicates;
+   }
+
+   public function resetIgnore()
+   {
+       $this->setIgnore(false);
+   }
     /**
      * Resets all of the pending data to be inserted
      *
@@ -380,7 +397,7 @@ class Table
     /**
      * Add an index to a database table.
      *
-     * In $options you can specific unique = true/false or name (index name).
+     * In $options you can specify unique = true/false, and name (index name).
      *
      * @param string|array|\Phinx\Db\Table\Index $columns Table Column(s)
      * @param array $options Index Options
@@ -570,6 +587,10 @@ class Table
         return $this;
     }
 
+    public function insertOrIgnore($data) {
+        return $this->insert($data, true);
+    }
+
     /**
      * Insert data into the table.
      *
@@ -581,8 +602,9 @@ class Table
      *              or array("col1" => "value1", "col2" => "anotherValue1")
      * @return $this
      */
-    public function insert($data)
+    public function insert($data, $ignoreDuplicates=false)
     {
+        $this->ignoreDuplicates= $ignoreDuplicates;
         // handle array of array situations
         $keys = array_keys($data);
         $firstKey = array_shift($keys);
@@ -631,12 +653,12 @@ class Table
      * @return void
      */
     public function saveData()
-    {
+    {   
+        $ignoreDuplicates = $this->getIgnore();
         $rows = $this->getData();
         if (empty($rows)) {
             return;
         }
-
         $bulk = true;
         $row = current($rows);
         $c = array_keys($row);
@@ -649,14 +671,15 @@ class Table
         }
 
         if ($bulk) {
-            $this->getAdapter()->bulkinsert($this->table, $this->getData());
+            $this->getAdapter()->bulkinsert($this->table, $this->getData(), $ignoreDuplicates);
         } else {
             foreach ($this->getData() as $row) {
-                $this->getAdapter()->insert($this->table, $row);
+                $this->getAdapter()->insert($this->table, $row, $ignoreDuplicates);
             }
         }
 
         $this->resetData();
+        $this->resetIgnore();
     }
 
     /**

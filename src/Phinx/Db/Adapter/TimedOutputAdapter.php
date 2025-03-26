@@ -84,22 +84,22 @@ class TimedOutputAdapter extends AdapterWrapper implements DirectActionInterface
     /**
      * @inheritDoc
      */
-    public function insert(Table $table, $row)
+    public function insert(Table $table, $row, $ignoreDuplicates=false)
     {
         $end = $this->startCommandTimer();
         $this->writeCommand('insert', [$table->getName()]);
-        parent::insert($table, $row);
+        parent::insert($table, $row, $ignoreDuplicates);
         $end();
     }
 
     /**
      * @inheritDoc
      */
-    public function bulkinsert(Table $table, $rows)
+    public function bulkinsert(Table $table, $rows, $ignoreDuplicates=false)
     {
         $end = $this->startCommandTimer();
         $this->writeCommand('bulkinsert', [$table->getName()]);
-        parent::bulkinsert($table, $rows);
+        parent::bulkinsert($table, $rows, $ignoreDuplicates);
         $end();
     }
 

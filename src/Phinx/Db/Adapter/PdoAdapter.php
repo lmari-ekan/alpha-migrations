@@ -31,6 +31,7 @@ use Phinx\Db\Table\Index;
 use Phinx\Db\Table\Table;
 use Phinx\Db\Util\AlterInstructions;
 use Phinx\Migration\MigrationInterface;
+use Phinx\Util\Literal;
 use RuntimeException;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -238,31 +239,45 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
     /**
      * @inheritDoc
      */
-    public function insert(Table $table, $row)
+    public function insert(Table $table, $row, $ignoreDuplicates = false)
     {
         $sql = sprintf(
             'INSERT INTO %s ',
             $this->quoteTableName($table->getName())
         );
+        
         $columns = array_keys($row);
         $sql .= '(' . implode(', ', array_map([$this, 'quoteColumnName'], $columns)) . ')';
-
+    
         foreach ($row as $column => $value) {
             if (is_bool($value)) {
                 $row[$column] = $this->castToBool($value);
             }
         }
-
+    
         if ($this->isDryRunEnabled()) {
             $sql .= ' VALUES (' . implode(', ', array_map([$this, 'quoteValue'], $row)) . ');';
             $this->output->writeln($sql);
         } else {
             $sql .= ' VALUES (' . implode(', ', array_fill(0, count($columns), '?')) . ')';
-            $stmt = $this->getConnection()->prepare($sql);
-            $stmt->execute(array_values($row));
+    
+            try {
+                $stmt = $this->getConnection()->prepare($sql);
+                $stmt->execute(array_values($row));
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                    if ($ignoreDuplicates) {
+                        return; 
+                    } else {
+                        throw $e; 
+                    }
+                } else {
+                    throw $e; 
+                }
+            }
         }
     }
-
+    
     /**
      * Quotes a database value.
      *
@@ -296,16 +311,17 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
     /**
      * @inheritDoc
      */
-    public function bulkinsert(Table $table, $rows)
+    public function bulkinsert(Table $table, $rows, $ignoreDuplicates = false)
     {
         $sql = sprintf(
             'INSERT INTO %s ',
             $this->quoteTableName($table->getName())
         );
+        
         $current = current($rows);
         $keys = array_keys($current);
         $sql .= '(' . implode(', ', array_map([$this, 'quoteColumnName'], $keys)) . ') VALUES ';
-
+    
         if ($this->isDryRunEnabled()) {
             $values = array_map(function ($row) {
                 return '(' . implode(', ', array_map([$this, 'quoteValue'], $row)) . ')';
@@ -318,9 +334,10 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
             $count_vars = count($rows);
             $queries = array_fill(0, $count_vars, $query);
             $sql .= implode(',', $queries);
+    
             $stmt = $this->getConnection()->prepare($sql);
             $vals = [];
-
+    
             foreach ($rows as $row) {
                 foreach ($row as $v) {
                     if (is_bool($v)) {
@@ -330,10 +347,23 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
                     }
                 }
             }
-
-            $stmt->execute($vals);
+    
+            try {
+                $stmt->execute($vals);
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                    if ($ignoreDuplicates) {
+                        return; 
+                    } else {
+                        throw $e; 
+                    }
+                } else {
+                    throw $e; 
+                }
+            }
         }
     }
+    
 
     /**
      * @inheritDoc
@@ -583,8 +613,10 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
      */
     protected function getDefaultValueDefinition($default, $columnType = null)
     {
-        // Ensure a defaults of CURRENT_TIMESTAMP(3) is not quoted.
-        if (is_string($default) && strpos($default, 'CURRENT_TIMESTAMP') !== 0) {
+        if ($default instanceof Literal) {
+            $default = (string)$default;
+        } elseif (is_string($default) && strpos($default, 'CURRENT_TIMESTAMP') !== 0) {
+            // Ensure a defaults of CURRENT_TIMESTAMP(3) is not quoted.
             $default = $this->getConnection()->quote($default);
         } elseif (is_bool($default)) {
             $default = $this->castToBool($default);
