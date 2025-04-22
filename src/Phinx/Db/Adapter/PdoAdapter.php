@@ -206,8 +206,12 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
         try {
             return $this->getConnection()->exec($sql);
         } catch (PDOException $e) {
-            $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with executeOrIgnore() : {$e->getMessage()} \e[0m");
-            return; 
+            if (strpos($e->getMessage(), 'not at all') !== false) {
+                $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with executeOrIgnore() : {$e->getMessage()} \e[0m");
+                return;
+            } else {
+                throw $e;
+            }
         }
     }
     
@@ -287,6 +291,8 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
                     if ($ignoreDuplicates) {
                         $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with insertOrIgnore() : {$e->getMessage()} \e[0m");
                         return; 
+                    } else {
+                        throw $e;
                     }
                 }
             }
@@ -370,6 +376,8 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
                     if ($ignoreDuplicates) {
                         $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with insertOrIgnore() : {$e->getMessage()} \e[0m");
                         return;
+                    } else {
+                        throw $e;
                     }
                 }
             }
