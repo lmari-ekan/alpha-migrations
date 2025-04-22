@@ -201,6 +201,15 @@ abstract class AbstractMigration implements MigrationInterface
     /**
      * @inheritDoc
      */
+    public function executeOrIgnore($sql)
+    {
+        $this->getOutput()->writeln('<info>using bootstrap</info>');
+        return $this->getAdapter()->executeOrIgnore($sql);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function query($sql)
     {
         return $this->getAdapter()->query($sql);

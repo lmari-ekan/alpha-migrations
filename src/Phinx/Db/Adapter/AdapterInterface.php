@@ -269,6 +269,14 @@ interface AdapterInterface
     public function execute($sql);
 
     /**
+     * Executes a SQL statement and returns the number of affected rows.
+     *
+     * @param string $sql SQL
+     * @return int
+     */
+    public function executeOrIgnore($sql);
+
+    /**
      * Executes a list of migration actions for the given table
      *
      * @param \Phinx\Db\Table\Table $table The table to execute the actions for

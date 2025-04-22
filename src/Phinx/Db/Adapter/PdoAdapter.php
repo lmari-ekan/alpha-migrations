@@ -193,6 +193,24 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
         return $this->getConnection()->exec($sql);
     }
 
+
+    public function executeOrIgnore($sql)
+    {
+        $sql = rtrim($sql, "; \t\n\r\0\x0B") . ';';
+        $this->verboseLog($sql);
+
+        if ($this->isDryRunEnabled()) {
+            return 0;
+        }
+
+        try {
+            return $this->getConnection()->exec($sql);
+        } catch (PDOException $e) {
+            $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with executeOrIgnore() : {$e->getMessage()} \e[0m");
+            return; 
+        }
+    }
+    
     /**
      * Returns the Cake\Database connection object using the same underlying
      * PDO object as this connection.
@@ -267,12 +285,9 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
             } catch (PDOException $e) {
                 if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
                     if ($ignoreDuplicates) {
+                        $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with insertOrIgnore() : {$e->getMessage()} \e[0m");
                         return; 
-                    } else {
-                        throw $e; 
                     }
-                } else {
-                    throw $e; 
                 }
             }
         }
@@ -353,12 +368,9 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
             } catch (PDOException $e) {
                 if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
                     if ($ignoreDuplicates) {
-                        return; 
-                    } else {
-                        throw $e; 
+                        $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with insertOrIgnore() : {$e->getMessage()} \e[0m");
+                        return;
                     }
-                } else {
-                    throw $e; 
                 }
             }
         }

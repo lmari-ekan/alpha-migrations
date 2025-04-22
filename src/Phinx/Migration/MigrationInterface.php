@@ -136,6 +136,15 @@ interface MigrationInterface
      */
     public function execute($sql);
 
+
+    /**
+     * Executes a SQL statement and returns the number of affected rows.
+     *
+     * @param string $sql SQL
+     * @return int
+     */
+    public function executeOrIgnore($sql);
+    
     /**
      * Executes a SQL statement.
      *
