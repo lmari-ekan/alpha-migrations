@@ -156,6 +156,11 @@ abstract class AdapterWrapper implements AdapterInterface, WrapperInterface
         return $this->getAdapter()->execute($sql);
     }
 
+    public function executeOrIgnore($sql)
+    {
+        return $this->getAdapter()->executeOrIgnore($sql);
+    }
+
     /**
      * @inheritDoc
      */
