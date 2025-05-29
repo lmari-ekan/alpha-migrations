@@ -290,12 +290,11 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
                 if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
                     if ($ignoreDuplicates) {
                         $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with insertOrIgnore() : {$e->getMessage()} \e[0m");
-                        return; 
-                    } else {
-                        throw $e;
+                        return;
                     }
-                }
-            }
+                }            
+                throw $e;
+            }    
         }
     }
     
@@ -376,11 +375,10 @@ abstract class PdoAdapter extends AbstractAdapter implements DirectActionInterfa
                     if ($ignoreDuplicates) {
                         $this->getOutput()->writeln("\e[43;30m [WARNING] Ignoring error with insertOrIgnore() : {$e->getMessage()} \e[0m");
                         return;
-                    } else {
-                        throw $e;
                     }
-                }
-            }
+                }            
+                throw $e;
+            }    
         }
     }
     
